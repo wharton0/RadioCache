@@ -26,28 +26,25 @@ interface RadioRepository {
 }
 
 /**
- * Stage-1 in-memory implementation seeded with demo stations so the UI
- * and player are testable without a database or network.
- * NOT persisted — Stage 2 replaces with Room.
+ * In-memory implementation used by previews and tests. Seeds the SAME
+ * public-domain catalogue as the Room seed — deliberately not commercial
+ * broadcasters, which this build must not redistribute.
  */
 class InMemoryRadioRepository : RadioRepository {
 
     private val stations = MutableStateFlow(
         listOf(
-            Station("capital", "Capital London", "UK", com.radiocache.app.data.model.StationType.MUSIC, listOf("global"), subscribed = true, liveStreamUrl = "https://www.globalplayer.com/live/capital/london/", providerStationKey = "capital/london"),
-            Station("bbc-r1", "BBC Radio 1", "UK", com.radiocache.app.data.model.StationType.MUSIC, listOf("bbc"), subscribed = true),
-            Station("bbc-r2", "BBC Radio 2", "UK", com.radiocache.app.data.model.StationType.MUSIC, listOf("bbc"), subscribed = false),
-            Station("absolute", "Absolute Radio", "UK", com.radiocache.app.data.model.StationType.MUSIC, listOf("absolute"), subscribed = false, liveStreamUrl = "https://www.hellorayo.co.uk/absolute-radio/"),
-            Station("heart", "Heart London", "UK", com.radiocache.app.data.model.StationType.MUSIC, listOf("global"), subscribed = false, liveStreamUrl = "https://www.globalplayer.com/live/heart/london/", providerStationKey = "heart/london"),
+            Station("archive-radio", "Archive Radio", "INTL", com.radiocache.app.data.model.StationType.MUSIC, listOf("archive"), subscribed = true),
+            Station("gutenberg", "Gutenberg Audio", "INTL", com.radiocache.app.data.model.StationType.MUSIC, listOf("gutenberg"), subscribed = true),
         )
     )
     private val shows = MutableStateFlow(
         listOf(
-            Show("capital-breakfast", "capital", "Capital Breakfast", "Mon–Fri 06:00–10:00", 240, providerProgrammeKey = "46w7Auo", subscribed = true),
-            Show("r1-breakfast", "bbc-r1", "Radio 1 Breakfast", "Mon–Fri 07:00–10:30", 210, providerProgrammeKey = "b0080x5m", subscribed = true),
-            Show("r2-music", "bbc-r2", "BBC Radio 2 music programme", "Config PID", 180, providerProgrammeKey = "b0080c9l"),
-            Show("absolute-breakfast", "absolute", "Absolute Radio Breakfast", "Mon–Fri 06:00–10:00", 240),
-            Show("heart-breakfast", "heart", "Heart Breakfast", "Mon–Fri 06:30–10:00", 210),
+            Show("golden-age", "archive-radio", "Golden Age of Radio", "Anthology", 45, providerProgrammeKey = "ia:USA-Golden-Age-of-Radio", subscribed = true),
+            Show("old-time-radio", "archive-radio", "Old Time Radio", "Anthology", 30, providerProgrammeKey = "ia:old-time-radio-collection", subscribed = true),
+            Show("weird-circle", "archive-radio", "Weird Circle", "Anthology", 30, providerProgrammeKey = "ia:Weird_Circle_otr", subscribed = true),
+            Show("librivox-misc", "archive-radio", "LibriVox Recordings", "Anthology", 30, providerProgrammeKey = "ia:librivox", subscribed = true),
+            Show("gutenberg-audio", "gutenberg", "Project Gutenberg Audio", "Anthology", 30, providerProgrammeKey = "gutenberg", subscribed = true),
         )
     )
     private val recordings = MutableStateFlow<List<Recording>>(emptyList())

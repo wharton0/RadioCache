@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gutenberg Audio: an open-book glyph for read-aloud recordings. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M54,36 C46,30 36,28 26,30 L26,74 C36,72 46,74 54,80 C62,74 72,72 82,74 L82,30 C72,28 62,30 54,36 z"
+        android:fillColor="#FFFFFF" />
+    <path
+        android:pathData="M54,36 L54,80"
+        android:strokeAlpha="0.55"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M36,44 L46,46"
+        android:strokeAlpha="0.55"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M36,56 L46,58"
+        android:strokeAlpha="0.55"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M72,44 L62,46"
+        android:strokeAlpha="0.55"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M72,56 L62,58"
+        android:strokeAlpha="0.55"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+</vector>

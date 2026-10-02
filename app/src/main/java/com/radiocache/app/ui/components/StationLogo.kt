@@ -78,11 +78,7 @@ fun StationLogo(
 
 /** Station id → bundled drawable res id, or 0 when we ship none. */
 private fun bundledLogoFor(stationId: String): Int = when (stationId) {
-    "capital" -> R.drawable.station_logo_capital
-    "bbc-r1" -> R.drawable.station_logo_bbc_r1
-    "absolute" -> R.drawable.station_logo_absolute
-    "heart" -> R.drawable.station_logo_heart
-    "classicfm" -> R.drawable.station_logo_classicfm
-    "smooth" -> R.drawable.station_logo_smooth
+    "archive-radio" -> R.drawable.station_logo_archive
+    "gutenberg" -> R.drawable.station_logo_gutenberg
     else -> 0
 }

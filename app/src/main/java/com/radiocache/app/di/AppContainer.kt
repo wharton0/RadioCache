@@ -12,9 +12,7 @@ import com.radiocache.app.engine.capture.HttpStreamCaptureEngine
 import com.radiocache.app.engine.capture.NoOpStreamCaptureEngine
 import com.radiocache.app.engine.capture.StreamCaptureEngine
 import com.radiocache.app.engine.catchup.CatchUpProvider
-import com.radiocache.app.engine.providers.absolute.AbsoluteRadioProvider
-import com.radiocache.app.engine.providers.bbc.BbcProvider
-import com.radiocache.app.engine.providers.globalplayer.GlobalPlayerProvider
+import com.radiocache.app.engine.providers.archive.InternetArchiveProvider
 import com.radiocache.app.engine.providers.rss.RssCatchUpProvider
 import com.radiocache.app.playback.RadioPlayerManager
 import androidx.work.WorkManager
@@ -56,25 +54,21 @@ class AppContainer(private val appContext: Context) {
         SettingsRepository(appContext)
     }
 
-    // --- Catch-up engine: music-radio providers first, RSS only as fallback ---
-    val globalProvider: GlobalPlayerProvider by lazy {
-        GlobalPlayerProvider(http)
-    }
-    val bbcProvider: BbcProvider by lazy {
-        BbcProvider(http)
-    }
-    val absoluteProvider: AbsoluteRadioProvider by lazy {
-        AbsoluteRadioProvider()
+    // --- Catch-up engine: public-domain archive first, generic RSS last ---
+    // The F-Droid build deliberately ships no commercial-broadcaster
+    // provider: shipping code that redistributes someone else's broadcast
+    // audio would make the app non-free. The engine is source-agnostic, so
+    // adding a licensed source later is a one-line change here.
+    val archiveProvider: InternetArchiveProvider by lazy {
+        InternetArchiveProvider(http)
     }
     val catchUpProviders: List<CatchUpProvider> by lazy {
-        listOf(globalProvider, bbcProvider, absoluteProvider, RssCatchUpProvider(http))
+        listOf(archiveProvider, RssCatchUpProvider(http))
     }
-    val programmeResolvers: List<ProgrammeResolver> by lazy {
-        listOf(globalProvider, bbcProvider, absoluteProvider)
-    }
-    val liveStreamProviders: List<LiveStreamProvider> by lazy {
-        listOf(globalProvider, bbcProvider, absoluteProvider)
-    }
+
+    // No live-stream provider: the live-capture engine is retained (it is
+    // generic code) but has no station to point at in this build.
+    val liveStreamProviders: List<LiveStreamProvider> by lazy { emptyList() }
 
     private val http: OkHttpClient by lazy { OkHttpClient() }
 

@@ -49,6 +49,9 @@ coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
 junit = { group = "junit", name = "junit", version = "4.13.2" }
+# Test-only: android.jar stubs org.json, so JSON-parsing code cannot be unit
+# tested without the real implementation on the test classpath.
+json = { group = "org.json", name = "json", version = "20231013" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 
 [plugins]

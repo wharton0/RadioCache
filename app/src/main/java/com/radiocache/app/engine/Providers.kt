@@ -7,7 +7,7 @@ import com.radiocache.app.data.model.Station
 /**
  * Top-level provider contracts.
  *
- * ```
+ *  ```
  *                    RadioCache
  *                        │
  *              ┌─────────┴─────────┐
@@ -16,14 +16,16 @@ import com.radiocache.app.data.model.Station
  *              │                   │
  *      ┌───────┼────────┐          │
  *      │       │        │          │
- *   Capital   BBC    Absolute    Live Radio
- *      │       │        │          │
- *  GlobalPlayer BBC API Provider  AAC/HLS
+ *   Archive   RSS    (your source)   Direct / HLS
  *      │       │        │          │
  *      └───────┴────────┴──────────┘
  *                    │
  *             Local Recording
  * ```
+ *
+ * A provider is added by implementing the relevant interface and
+ * registering it in `AppContainer`. The engine never knows which broadcaster
+ * (or archive) a show comes from.
  */
 
 /**

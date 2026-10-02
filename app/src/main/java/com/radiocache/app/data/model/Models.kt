@@ -140,5 +140,8 @@ data class BroadcastProgramme(
 )
 
 enum class AudioFormat {
-    M4A_AAC, MP3, HLS, DASH, UNKNOWN
+    M4A_AAC, MP3, HLS, DASH,
+    /** Lossless / open codecs used by public-domain archives. */
+    OGG_VORBIS, FLAC, WAV,
+    UNKNOWN
 }

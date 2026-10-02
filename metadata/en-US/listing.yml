@@ -1,0 +1,58 @@
+id: com.radiocache.player
+name: RadioCache
+summary: Cache radio audio over Wi-Fi and listen offline
+description: |
+  RadioCache downloads audio while you are on Wi-Fi so it is ready when you
+  are not — then plays it back offline with full transport controls and
+  resume-from-position.
+
+  Features:
+  • Scheduled catch-up syncs (interval, or a fixed daily time)
+  • Wi-Fi-only transfers, with resumable downloads via HTTP Range
+  • Background playback with notification and lock-screen controls
+  • Retention rules that clean up old audio automatically
+  • A generic live-capture engine for shows with no catch-up audio
+
+  Content
+  This build ships public-domain sources only: old-time radio and
+  volunteer-read audiobooks from the Internet Archive, plus Project
+  Gutenberg audio. No commercial broadcaster content is bundled or
+  redistributed. The archive provider refuses any item whose licence is
+  unknown, non-commercial, or NoDerivs.
+
+  Only public, documented HTTP interfaces are used. No access control, DRM,
+  or geo-restriction is circumvented.
+categories:
+  - Multimedia
+  - Audio
+keywords:
+  - offline
+  - radio
+  - podcast
+  - cache
+  - download
+  - public domain
+  - audiobook
+license: GPL-3.0-or-later
+authorName: RadioCache contributors
+sourceCode: https://github.com/YOUR-USERNAME/RadioCache
+issueTracker: https://github.com/YOUR-USERNAME/RadioCache/issues
+repoType: git
+branch: main
+
+screenshots:
+  - en-US/images/phoneScreenshots/home.png
+  - en-US/images/phoneScreenshots/player.png
+  - en-US/images/phoneScreenshots/downloads.png
+requires:
+  minSdkVersion: 26
+  targetSdkVersion: 36
+  compileSdkVersion: 36
+builds:
+  - type: gradle
+    buildSource: gradle
+    subprojects: true
+    android:
+      compileSdk: 36
+      targetSdk: 36
+      minSdk: 26

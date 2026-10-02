@@ -29,14 +29,11 @@ fun RadioCacheTheme(
  * across restarts and identical on every screen (Stations, Home, Player).
  */
 object StationColors {
+    // Public-domain build: these are OUR palette entries, not third-party
+    // brand colours (the previous map used broadcasters' trademark colours).
     private val fixed = mapOf(
-        "capital" to Color(0xFFE53935), // Capital red
-        "heart" to Color(0xFFEC407A), // Heart pink
-        "bbc-r1" to Color(0xFFF9A825), // Radio 1 yellow
-        "bbc-r2" to Color(0xFFFB8C00), // Radio 2 orange
-        "absolute" to Color(0xFF7E57C2), // Absolute purple
-        "classicfm" to Color(0xFF303F9F), // Classic FM indigo
-        "smooth" to Color(0xFF039BE5), // Smooth sky blue
+        "archive-radio" to Color(0xFF00695C), // archival teal
+        "gutenberg" to Color(0xFF5D4037), // book brown
     )
 
     fun forStation(stationId: String): Color =

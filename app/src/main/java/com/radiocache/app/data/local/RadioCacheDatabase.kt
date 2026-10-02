@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
  */
 @Database(
     entities = [StationEntity::class, ShowEntity::class, RecordingEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -52,7 +52,7 @@ abstract class RadioCacheDatabase : RoomDatabase() {
             Room.databaseBuilder(context, RadioCacheDatabase::class.java, DB_NAME)
                 // Real migration keeps user data (subscriptions, recordings index).
                 // Destructive fallback remains only for dev-hour disasters.
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .fallbackToDestructiveMigration()
                 .addCallback(SeedCallback(logger))
                 .build()
@@ -64,39 +64,72 @@ abstract class RadioCacheDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Public-domain build: remove every commercial-broadcaster seed row
+         * and the recordings they produced. Leaving cached BBC/Capital audio
+         * on disk would defeat the point of the rebuild, so the files go too.
+         */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val showIds = RETIRED_SHOW_IDS.joinToString(",") { "'$it'" }
+                val stationIds = RETIRED_STATION_IDS.joinToString(",") { "'$it'" }
+                // Capture localPath first: deleting the row loses the path,
+                // and stale files would be unreachable garbage.
+                val paths = mutableListOf<String>()
+                db.query("SELECT localPath FROM recordings WHERE localPath IS NOT NULL")
+                    .use { c -> while (c.moveToNext()) paths += c.getString(0) }
+
+                db.execSQL("DELETE FROM recordings WHERE showId IN ($showIds)")
+                db.execSQL("DELETE FROM shows WHERE id IN ($showIds)")
+                db.execSQL("DELETE FROM stations WHERE id IN ($stationIds)")
+
+                // Delete the retired stations' recording directories wholesale.
+                paths.forEach { p ->
+                    runCatching { java.io.File(p).parentFile?.deleteRecursively() }
+                }
+            }
+        }
+
         /** Visible for tests: in-memory DB via Room.inMemoryDatabaseBuilder. */
         fun seedData(): Pair<List<Station>, List<Show>> = Pair(SEED_STATIONS, SEED_SHOWS)
 
-        // --- Seed catalogue: the five music-radio test sources ---
+        // --- Seed catalogue: public-domain sources only ---
+        // The F-Droid build ships NO commercial broadcaster content. Every
+        // show below is backed by an item on archive.org (or Project
+        // Gutenberg) whose licence permits redistribution; see
+        // `data/seed/PublicDomainSeeds` for per-item provenance.
         private val SEED_STATIONS = listOf(
-            Station("capital", "Capital London", "UK", StationType.MUSIC, listOf("global"), logoUrl = "https://herald.musicradio.com/media/0d3d891d-32f2-4c53-95ee-8d1e35bdd126.png", subscribed = true, liveStreamUrl = "https://www.globalplayer.com/live/capital/london/", providerStationKey = "capital/london"),
-            Station("bbc-r1", "BBC Radio 1", "UK", StationType.MUSIC, listOf("bbc"), logoUrl = "https://ichef.bbci.co.uk/images/ic/512x512/p0lz2vhw.jpg", subscribed = true),
-            Station("absolute", "Absolute Radio", "UK", StationType.MUSIC, listOf("absolute"), logoUrl = "https://listenapi.s3.amazonaws.com/img/BrandLogoImageUrl/1.png", liveStreamUrl = "https://www.hellorayo.co.uk/absolute-radio/"),
-            Station("heart", "Heart London", "UK", StationType.MUSIC, listOf("global"), logoUrl = "https://herald.musicradio.com/media/49b9e8cb-15bf-4bf2-8c28-a4850cc6b0f3.png", liveStreamUrl = "https://www.globalplayer.com/live/heart/london/", providerStationKey = "heart/london"),
-            Station("classicfm", "Classic FM", "UK", StationType.MUSIC, listOf("global"), logoUrl = "https://herald.musicradio.com/media/6a3ef437-0652-463d-9e9d-980d453c9168.png", liveStreamUrl = "https://www.globalplayer.com/live/classicfm/uk/", providerStationKey = "classicfm/uk"),
-            Station("smooth", "Smooth", "UK", StationType.MUSIC, listOf("global"), logoUrl = "https://herald.musicradio.com/media/61a4b6da-0e8d-4b2f-b6e4-ad7e150a9ab0.png", liveStreamUrl = "https://www.globalplayer.com/live/smooth/uk/", providerStationKey = "smooth/uk"),
+            Station("archive-radio", "Archive Radio", "INTL", StationType.MUSIC, listOf("archive"), logoUrl = null, subscribed = true),
+            Station("gutenberg", "Gutenberg Audio", "INTL", StationType.MUSIC, listOf("gutenberg"), logoUrl = null, subscribed = true),
         )
 
         private val SEED_SHOWS = listOf(
-            Show("capital-breakfast", "capital", "Capital Breakfast", "Mon–Fri 06:00–10:00", 240, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "46w7Auo", subscribed = true),
-            Show("r1-breakfast", "bbc-r1", "Radio 1 Breakfast (All Day podcast)", "Mon–Fri 07:00–10:30", 210, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "b0080x5m", feedUrl = "https://podcasts.files.bbci.co.uk/p02nrw8h.rss", subscribed = true),
-            Show("absolute-breakfast", "absolute", "Hometime with Bush and Richie", "Mon–Fri 16:00–19:00", 180, feedUrl = "https://rss.podplaystudio.com/1305.xml"),
-            Show("heart-breakfast", "heart", "Heart Breakfast", "Mon–Fri 06:30–10:00", 210),
-            Show("classicfm-breakfast", "classicfm", "Classic FM Breakfast", "Mon–Fri 06:30–09:00", 150, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "46wcDcx"),
-            Show("smooth-kate", "smooth", "Kate Garraway", "Mon–Fri 10:00–13:00", 180, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "b8F8VgS"),
+            Show("golden-age", "archive-radio", "Golden Age of Radio", "Anthology", 45, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "ia:USA-Golden-Age-of-Radio", subscribed = true),
+            Show("old-time-radio", "archive-radio", "Old Time Radio", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "ia:old-time-radio-collection", subscribed = true),
+            Show("weird-circle", "archive-radio", "Weird Circle", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "ia:Weird_Circle_otr", subscribed = true),
+            Show("librivox-misc", "archive-radio", "LibriVox Recordings", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "ia:librivox", subscribed = true),
+            Show("gutenberg-audio", "gutenberg", "Project Gutenberg Audio", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "gutenberg", subscribed = true),
         )
 
-        /**
-         * Verified programme identities / official podcast feeds discovered
-         * after v1 seed shipped. Applied to existing installs where feedUrl
-         * is still blank (see backfillFeed). Empty feed = identity-only
-         * (no public audio; awaits live capture).
-         */
-        fun feedBackfills(): List<FeedBackfill> = listOf(
-            FeedBackfill("r1-breakfast", "Radio 1 Breakfast (All Day podcast)", "https://podcasts.files.bbci.co.uk/p02nrw8h.rss", "b0080x5m"),
-            FeedBackfill("absolute-breakfast", "Hometime with Bush and Richie", "https://rss.podplaystudio.com/1305.xml", null),
-            FeedBackfill("r2-music", "Pick of the Pops", "", "b006wqx7"),
+        /** Station/show rows from pre-public-domain builds. Purged in v3. */
+        private val RETIRED_SHOW_IDS = listOf(
+            "capital-breakfast", "r1-breakfast", "absolute-breakfast",
+            "heart-breakfast", "classicfm-breakfast", "smooth-kate",
+            "r2-music", "r2-pick-of-pops",
         )
+
+        private val RETIRED_STATION_IDS = listOf(
+            "capital", "bbc-r1", "absolute", "heart", "classicfm", "smooth", "bbc-r2",
+        )
+
+
+        /**
+         * Feed backfills. The commercial-broadcaster entries that used to live
+         * here were removed for the public-domain build — the retired shows
+         * themselves are purged by MIGRATION_2_3, so there is nothing left to
+         * backfill. Kept as an empty hook for future PD feed discovery.
+         */
+        fun feedBackfills(): List<FeedBackfill> = emptyList()
 
         data class FeedBackfill(
             val showId: String,
