@@ -1,0 +1,27 @@
+# Build output
+build/
+.gradle/
+.kotlin/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Logs
+*.log
+build-err.log
+
+# Secrets — never commit
+keystore.properties
+*.jks
+*.keystore
+local.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
