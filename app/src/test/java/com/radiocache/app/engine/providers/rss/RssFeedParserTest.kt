@@ -18,7 +18,8 @@ class RssFeedParserTest {
               <link>https://example.com/ep1</link>
               <guid>ep1</guid>
               <pubDate>Mon, 29 Sep 2025 06:00:00 +0000</pubDate>
-              <enclosure url="https://cdn.example.com/ep1.mp3" type="audio/mpeg" length="12345"/>
+              <copyright>Public domain</copyright>
+              <enclosure url="https://upload.wikimedia.org/wikipedia/commons/a/ab/ep1.mp3" type="audio/mpeg" length="12345"/>
               <itunes:duration>01:02:03</itunes:duration>
             </item>
             <item>
@@ -41,7 +42,7 @@ class RssFeedParserTest {
         val ep1 = programmes[1]
         assertEquals("ep1", ep1.programmeId)
         assertTrue(ep1.catchUpAvailable)
-        assertEquals("https://cdn.example.com/ep1.mp3", ep1.resolvedAudioUrl)
+        assertEquals("https://upload.wikimedia.org/wikipedia/commons/a/ab/ep1.mp3", ep1.resolvedAudioUrl)
         assertEquals((1 * 3600 + 2 * 60 + 3) * 1000L, ep1.durationMs)
         assertTrue(ep1.scheduledStartEpochMs > 0)
     }
@@ -57,7 +58,8 @@ class RssFeedParserTest {
             <rss version="2.0"><channel><title>T</title>
             <item><title>Ep</title><guid>g1</guid>
             <pubDate>Mon, 29 Sep 2025 06:00:00 +0000</pubDate>
-            <enclosure url="https://cdn.example.com/a.mp3" type="audio/mpeg" length="1"/>
+            <copyright>Public domain</copyright>
+            <enclosure url="https://upload.wikimedia.org/wikipedia/commons/a/ab/a.mp3" type="audio/mpeg" length="1"/>
             </item></channel></rss>
         """.trimIndent()
         val programmes = RssFeedParser.parse(withDoctype, show)

@@ -27,11 +27,12 @@ class RssLicenceGateTest {
     </channel></rss>
     """.trimIndent()
 
-    @Test fun `enclosure on a trusted host is offered`() {
+    @Test fun `enclosure on a trusted host with a permissive declaration is offered`() {
         val xml = feed(
             """
             <item>
               <title>Episode one</title>
+              <copyright>Public domain</copyright>
               <enclosure url="https://upload.wikimedia.org/wikipedia/commons/a/ab/one.ogg" type="audio/ogg"/>
             </item>
             """.trimIndent()
@@ -40,6 +41,20 @@ class RssLicenceGateTest {
         assertEquals(1, out.size)
         assertNotNull(out.first().resolvedAudioUrl)
         assertTrue(out.first().catchUpAvailable)
+    }
+
+    @Test fun `trusted host with no licence statement is refused (unknown provenance)`() {
+        // Even on an allow-listed host, a bare enclosure with no licence is
+        // not proof of redistributability.
+        val xml = feed(
+            """
+            <item>
+              <title>No licence said</title>
+              <enclosure url="https://upload.wikimedia.org/wikipedia/commons/a/ab/one.ogg" type="audio/ogg"/>
+            </item>
+            """.trimIndent()
+        )
+        assertNull(RssFeedParser.parse(xml, show).first().resolvedAudioUrl)
     }
 
     @Test fun `enclosure on an untrusted host is refused`() {

@@ -151,24 +151,29 @@ object RssFeedParser {
             // feed's own licence fields forbids redistribution. Without this
             // check a user-supplied feed could pull down NC/ND audio and make
             // the app non-free.
-            resolvedAudioUrl = audioUrl?.takeIf { isRedistributable(el, audioHost) },
+            resolvedAudioUrl = audioUrl?.takeIf { isRedistributable(el, it) },
             audioFormat = guessAudioFormat(audioUrl),
-            catchUpAvailable = audioUrl != null && isRedistributable(el, audioHost),
+            catchUpAvailable = audioUrl != null && isRedistributable(el, audioUrl),
         )
     }
 
-    private fun audioHost(audioUrl: String?): String? =
-        runCatching { android.net.Uri.parse(audioUrl ?: return null).host }.getOrNull()
+    /**
+     * Host of an audio URL. Uses java.net.URI rather than android.net.Uri
+     * because the Android class is stubbed in JVM unit tests and would
+     * return null, making every enclosure look untrusted there.
+     */
+    private fun hostOf(url: String?): String? =
+        runCatching { java.net.URI(url ?: return null).host?.lowercase() }.getOrNull()
 
     /**
      * True only when the enclosure's host is trusted and the feed carries no
      * non-commercial / no-derivatives statement.
      */
-    private fun isRedistributable(item: Element, audioHost: String?): Boolean {
-        val host = audioHost?.lowercase() ?: return false
+    private fun isRedistributable(item: Element, audioUrl: String?): Boolean {
+        val host = hostOf(audioUrl)?.lowercase() ?: return false
         if (!LicencePolicy.TRUSTED_HOSTS.containsKey(host)) return false
         val text = buildString {
-            for (tag in LICENCE_TAGS) {
+            for (tag in licenceTags) {
                 val n = item.getElementsByTagName(tag)
                 if (n.length > 0) append(n.item(0)?.textContent.orEmpty()).append(' ')
             }
@@ -179,12 +184,11 @@ object RssFeedParser {
         return LicencePolicy.evaluate(host, text, shareAlikeReq = shareAlike) != TrustLevel.REFUSED
     }
 
-    private companion object {
-        val LICENCE_TAGS = listOf(
-            "copyright", "license", "licence",
-            "creativecommons:license", "itunes:copyright",
-        )
-    }
+    /** RSS/iTunes tags that can carry a licence statement. */
+    private val licenceTags = listOf(
+        "copyright", "license", "licence",
+        "creativecommons:license", "itunes:copyright",
+    )
 
     fun parseDate(raw: String): Long {
         for (fmt in PUBDATE_FORMATS) {
