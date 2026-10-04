@@ -34,17 +34,16 @@ class InMemoryRadioRepository : RadioRepository {
 
     private val stations = MutableStateFlow(
         listOf(
-            Station("archive-radio", "Archive Radio", "INTL", com.radiocache.app.data.model.StationType.MUSIC, listOf("archive"), subscribed = true),
-            Station("gutenberg", "Gutenberg Audio", "INTL", com.radiocache.app.data.model.StationType.MUSIC, listOf("gutenberg"), subscribed = true),
+            Station("commons", "Commons Radio", "INTL", com.radiocache.app.data.model.StationType.MUSIC, listOf("commons"), subscribed = true),
+            Station("librivox", "LibriVox", "INTL", com.radiocache.app.data.model.StationType.MUSIC, listOf("librivox"), subscribed = true),
         )
     )
     private val shows = MutableStateFlow(
         listOf(
-            Show("golden-age", "archive-radio", "Golden Age of Radio", "Anthology", 45, providerProgrammeKey = "ia:USA-Golden-Age-of-Radio", subscribed = true),
-            Show("old-time-radio", "archive-radio", "Old Time Radio", "Anthology", 30, providerProgrammeKey = "ia:old-time-radio-collection", subscribed = true),
-            Show("weird-circle", "archive-radio", "Weird Circle", "Anthology", 30, providerProgrammeKey = "ia:Weird_Circle_otr", subscribed = true),
-            Show("librivox-misc", "archive-radio", "LibriVox Recordings", "Anthology", 30, providerProgrammeKey = "ia:librivox", subscribed = true),
-            Show("gutenberg-audio", "gutenberg", "Project Gutenberg Audio", "Anthology", 30, providerProgrammeKey = "gutenberg", subscribed = true),
+            Show("commons-otr", "commons", "Old-Time Radio", "Anthology", 45, providerProgrammeKey = "commons:old time radio", subscribed = true),
+            Show("commons-speech", "commons", "Spoken Word", "Anthology", 40, providerProgrammeKey = "commons:spoken word recordings", subscribed = true),
+            Show("commons-music", "commons", "Public-Domain Music", "Anthology", 30, providerProgrammeKey = "commons:Audio files of music", subscribed = true),
+            Show("librivox-classics", "librivox", "LibriVox Classics", "Anthology", 60, providerProgrammeKey = "librivox:", subscribed = true),
         )
     )
     private val recordings = MutableStateFlow<List<Recording>>(emptyList())

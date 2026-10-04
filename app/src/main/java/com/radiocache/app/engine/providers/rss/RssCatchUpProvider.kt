@@ -4,6 +4,8 @@ import com.radiocache.app.data.model.BroadcastProgramme
 import com.radiocache.app.data.model.Show
 import com.radiocache.app.engine.catchup.CatchUpProvider
 import com.radiocache.app.engine.catchup.guessAudioFormat
+import com.radiocache.app.engine.providers.common.LicencePolicy
+import com.radiocache.app.engine.providers.common.TrustLevel
 import com.radiocache.app.util.AndroidLogger
 import com.radiocache.app.util.AppLogger
 import kotlinx.coroutines.Dispatchers
@@ -144,9 +146,43 @@ object RssFeedParser {
             scheduledEndEpochMs = if (startMs > 0) startMs + show.durationMinutes * 60_000L else 0L,
             durationMs = text("itunes:duration")?.let(::parseDuration),
             sourceUrl = link,
-            resolvedAudioUrl = audioUrl,
+            // Licence gate. A generic feed may point anywhere, so the enclosure
+            // is only offered when the host is allow-listed AND nothing in the
+            // feed's own licence fields forbids redistribution. Without this
+            // check a user-supplied feed could pull down NC/ND audio and make
+            // the app non-free.
+            resolvedAudioUrl = audioUrl?.takeIf { isRedistributable(el, audioHost) },
             audioFormat = guessAudioFormat(audioUrl),
-            catchUpAvailable = audioUrl != null,
+            catchUpAvailable = audioUrl != null && isRedistributable(el, audioHost),
+        )
+    }
+
+    private fun audioHost(audioUrl: String?): String? =
+        runCatching { android.net.Uri.parse(audioUrl ?: return null).host }.getOrNull()
+
+    /**
+     * True only when the enclosure's host is trusted and the feed carries no
+     * non-commercial / no-derivatives statement.
+     */
+    private fun isRedistributable(item: Element, audioHost: String?): Boolean {
+        val host = audioHost?.lowercase() ?: return false
+        if (!LicencePolicy.TRUSTED_HOSTS.containsKey(host)) return false
+        val text = buildString {
+            for (tag in LICENCE_TAGS) {
+                val n = item.getElementsByTagName(tag)
+                if (n.length > 0) append(n.item(0)?.textContent.orEmpty()).append(' ')
+            }
+        }
+        val shareAlike = item.getElementsByTagName("link")
+            .let { n -> if (n.length > 0) n.item(0)?.textContent.orEmpty() else "" }
+            .contains("creativecommons.org/licenses/by-sa", ignoreCase = true)
+        return LicencePolicy.evaluate(host, text, shareAlikeReq = shareAlike) != TrustLevel.REFUSED
+    }
+
+    private companion object {
+        val LICENCE_TAGS = listOf(
+            "copyright", "license", "licence",
+            "creativecommons:license", "itunes:copyright",
         )
     }
 

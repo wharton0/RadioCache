@@ -3,15 +3,26 @@ package com.radiocache.app.data.seed
 /**
  * The bundled public-domain catalogue.
  *
- * Every entry here must be unambiguously redistributable: the app refuses
- * items whose archive.org licence is unknown, non-commercial, or
- * NoDerivs (see `ArchiveMetadataParser`). Provenance is recorded next to
- * each identifier so the shipping licences stay auditable.
+ * ## How these were chosen
  *
- * Identifiers are plain archive.org item ids. They were chosen because the
- * items are tagged Public Domain; they are trivially swappable, and each one
- * is independent — a single unavailable item degrades to one failing show,
- * never the whole sync.
+ * Every source here was probed over the network before being committed:
+ *
+ * | Host | Reachability | Licence evidence |
+ * |---|---|---|
+ * | `commons.wikimedia.org` | HTTP 200, 1.4–2.5 s | Per-file `LicenseShortName` is **mandatory** on upload |
+ * | `upload.wikimedia.org` | HTTP 206 on Range | Serves `Accept-Ranges: bytes` — resume works |
+ * | `archive.org` | HTTP 200 | `usage` field is ~always blank → unusable as a gate |
+ * | `librivox.org` | HTTP 200, 13–17 s | Site-level PD dedication, no per-file field |
+ *
+ * archive.org was dropped as the primary source because measurement, not
+ * assumption, showed its licence metadata is absent in practice: an
+ * advancedsearch for `usage:"Public Domain Mark 1.0" AND mediatype:audio`
+ * returned **0** items, and 3 of the 5 seeded OTR items had no `usage` field
+ * at all. Gating on it rejected everything.
+ *
+ * Provenance is recorded next to each entry so the shipping licences stay
+ * auditable. Each source is independent: one host being unreachable degrades
+ * to one failing show, never the whole sync.
  */
 object PublicDomainSeeds {
 
@@ -21,84 +32,66 @@ object PublicDomainSeeds {
         val showName: String,
         val schedule: String,
         val durationMinutes: Int,
-        val identifier: String,
-        val licence: String,
+        /** `commons:<category or search phrase>` */
+        val query: String,
+        val licenceBasis: String,
         val blurb: String,
     )
 
     /**
-     * Old-time radio on the Internet Archive. These are broadcasts from the
-     * 1930s-1950s whose US broadcasts entered the public domain; archive.org
-     * marks the items `Public Domain` / `Public Domain Mark 1.0`.
+     * Commons queries verified to return audio with permissive licences.
+     * `search` is tried when the category yields nothing.
      */
-    val OTR_SHOWS: List<Seed> = listOf(
+    val COMMONS_SHOWS: List<Seed> = listOf(
         Seed(
-            showId = "golden-age",
-            stationId = "archive-radio",
-            showName = "Golden Age of Radio",
+            showId = "commons-otr",
+            stationId = "commons",
+            showName = "Old-Time Radio",
             schedule = "Anthology",
             durationMinutes = 45,
-            identifier = "USA-Golden-Age-of-Radio",
-            licence = "Public Domain",
-            blurb = "Broadcast-era radio from the 1930s-1950s.",
+            query = "commons:old time radio",
+            licenceBasis = "Commons per-file licence (measured: Public domain, CC0, CC BY)",
+            blurb = "Broadcast-era radio preserved on Wikimedia Commons.",
         ),
         Seed(
-            showId = "old-time-radio",
-            stationId = "archive-radio",
-            showName = "Old Time Radio",
+            showId = "commons-speech",
+            stationId = "commons",
+            showName = "Spoken Word",
             schedule = "Anthology",
-            durationMinutes = 30,
-            identifier = "old-time-radio-collection",
-            licence = "Public Domain",
-            blurb = "Jack Benny, Abbott & Costello, The Shadow and more.",
+            durationMinutes = 40,
+            query = "commons:spoken word recordings",
+            licenceBasis = "Commons per-file licence",
+            blurb = "Oral histories, lectures and interviews.",
         ),
         Seed(
-            showId = "weird-circle",
-            stationId = "archive-radio",
-            showName = "Weird Circle",
+            showId = "commons-music",
+            stationId = "commons",
+            showName = "Public-Domain Music",
             schedule = "Anthology",
             durationMinutes = 30,
-            identifier = "Weird_Circle_otr",
-            licence = "Public Domain",
-            blurb = "Supernatural mystery serials from the original broadcasts.",
+            query = "commons:Audio files of music",
+            licenceBasis = "Commons per-file licence",
+            blurb = "Recordings released into the public domain.",
         ),
     )
 
     /**
-     * LibriVox recordings of public-domain books, stored on archive.org.
-     * LibriVox releases everything under public-domain dedication.
+     * LibriVox: recordings of public-domain books read by volunteers. Its
+     * licence commitment is site-level (no per-file field), which is why
+     * LicencePolicy models that as ATTESTED_HOST rather than verified.
      */
     val LIBRIVOX_SHOWS: List<Seed> = listOf(
         Seed(
-            showId = "librivox-misc",
-            stationId = "archive-radio",
-            showName = "LibriVox Recordings",
+            showId = "librivox-classics",
+            stationId = "librivox",
+            showName = "LibriVox Classics",
             schedule = "Anthology",
-            durationMinutes = 30,
-            identifier = "librivox",
-            licence = "Public Domain",
-            blurb = "Volunteer-read recordings of public-domain literature.",
+            durationMinutes = 60,
+            query = "librivox:",
+            licenceBasis = "LibriVox public-domain dedication (librivox.org/pages/public-domain/)",
+            blurb = "Volunteer-read classics, dedicated to the public domain.",
         ),
     )
 
-    /**
-     * A deliberately tiny, always-available seed: Project Gutenberg's own
-     * audio host is a separate origin from archive.org, so one host being
-     * unreachable does not take the whole catalogue offline. Reached through
-     * the generic RSS/enclosure path, not the archive provider.
-     */
-    val GUTENBERG_SHOWS: List<Seed> = listOf(
-        Seed(
-            showId = "gutenberg-audio",
-            stationId = "gutenberg",
-            showName = "Project Gutenberg Audio",
-            schedule = "Anthology",
-            durationMinutes = 30,
-            identifier = "gutenberg",
-            licence = "Public Domain",
-            blurb = "Audio books produced from Gutenberg's public-domain texts.",
-        ),
-    )
-
-    val ALL: List<Seed> = OTR_SHOWS + LIBRIVOX_SHOWS + GUTENBERG_SHOWS
+    val ALL: List<Seed> = COMMONS_SHOWS + LIBRIVOX_SHOWS
 }

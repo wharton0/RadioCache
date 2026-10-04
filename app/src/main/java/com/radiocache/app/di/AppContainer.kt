@@ -12,7 +12,8 @@ import com.radiocache.app.engine.capture.HttpStreamCaptureEngine
 import com.radiocache.app.engine.capture.NoOpStreamCaptureEngine
 import com.radiocache.app.engine.capture.StreamCaptureEngine
 import com.radiocache.app.engine.catchup.CatchUpProvider
-import com.radiocache.app.engine.providers.archive.InternetArchiveProvider
+import com.radiocache.app.engine.providers.commons.CommonsProvider
+import com.radiocache.app.engine.providers.librivox.LibrivoxProvider
 import com.radiocache.app.engine.providers.rss.RssCatchUpProvider
 import com.radiocache.app.playback.RadioPlayerManager
 import androidx.work.WorkManager
@@ -54,16 +55,16 @@ class AppContainer(private val appContext: Context) {
         SettingsRepository(appContext)
     }
 
-    // --- Catch-up engine: public-domain archive first, generic RSS last ---
-    // The F-Droid build deliberately ships no commercial-broadcaster
-    // provider: shipping code that redistributes someone else's broadcast
-    // audio would make the app non-free. The engine is source-agnostic, so
-    // adding a licensed source later is a one-line change here.
-    val archiveProvider: InternetArchiveProvider by lazy {
-        InternetArchiveProvider(http)
+    // --- Catch-up engine: Commons first (mandatory licence metadata), then
+    // LibriVox, then generic RSS. No commercial-broadcaster provider ships:
+    // code that redistributes someone else's broadcast audio would make the
+    // app non-free. The engine is source-agnostic, so adding a licensed
+    // source later is a one-line change here.
+    val commonsProvider: CommonsProvider by lazy {
+        CommonsProvider(http)
     }
     val catchUpProviders: List<CatchUpProvider> by lazy {
-        listOf(archiveProvider, RssCatchUpProvider(http))
+        listOf(commonsProvider, LibrivoxProvider(http), RssCatchUpProvider(http))
     }
 
     // No live-stream provider: the live-capture engine is retained (it is

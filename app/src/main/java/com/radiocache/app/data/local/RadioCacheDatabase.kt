@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
  */
 @Database(
     entities = [StationEntity::class, ShowEntity::class, RecordingEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -52,7 +52,7 @@ abstract class RadioCacheDatabase : RoomDatabase() {
             Room.databaseBuilder(context, RadioCacheDatabase::class.java, DB_NAME)
                 // Real migration keeps user data (subscriptions, recordings index).
                 // Destructive fallback remains only for dev-hour disasters.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .fallbackToDestructiveMigration()
                 .addCallback(SeedCallback(logger))
                 .build()
@@ -90,6 +90,27 @@ abstract class RadioCacheDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Replaces the v3 archive.org catalogue with the Commons/LibriVox one.
+         * Same reasoning as 2→3: the old rows point at sources that cannot be
+         * licensed-gated, so they go rather than linger as dead weight.
+         */
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val showIds = V3_SHOW_IDS.joinToString(",") { "'$it'" }
+                val stationIds = V3_STATION_IDS.joinToString(",") { "'$it'" }
+                val paths = mutableListOf<String>()
+                db.query("SELECT localPath FROM recordings WHERE localPath IS NOT NULL")
+                    .use { c -> while (c.moveToNext()) paths += c.getString(0) }
+                db.execSQL("DELETE FROM recordings WHERE showId IN ($showIds)")
+                db.execSQL("DELETE FROM shows WHERE id IN ($showIds)")
+                db.execSQL("DELETE FROM stations WHERE id IN ($stationIds)")
+                paths.forEach { p ->
+                    runCatching { java.io.File(p).parentFile?.deleteRecursively() }
+                }
+            }
+        }
+
         /** Visible for tests: in-memory DB via Room.inMemoryDatabaseBuilder. */
         fun seedData(): Pair<List<Station>, List<Show>> = Pair(SEED_STATIONS, SEED_SHOWS)
 
@@ -99,16 +120,15 @@ abstract class RadioCacheDatabase : RoomDatabase() {
         // Gutenberg) whose licence permits redistribution; see
         // `data/seed/PublicDomainSeeds` for per-item provenance.
         private val SEED_STATIONS = listOf(
-            Station("archive-radio", "Archive Radio", "INTL", StationType.MUSIC, listOf("archive"), logoUrl = null, subscribed = true),
-            Station("gutenberg", "Gutenberg Audio", "INTL", StationType.MUSIC, listOf("gutenberg"), logoUrl = null, subscribed = true),
+            Station("commons", "Commons Radio", "INTL", StationType.MUSIC, listOf("commons"), logoUrl = null, subscribed = true),
+            Station("librivox", "LibriVox", "INTL", StationType.MUSIC, listOf("librivox"), logoUrl = null, subscribed = true),
         )
 
         private val SEED_SHOWS = listOf(
-            Show("golden-age", "archive-radio", "Golden Age of Radio", "Anthology", 45, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "ia:USA-Golden-Age-of-Radio", subscribed = true),
-            Show("old-time-radio", "archive-radio", "Old Time Radio", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "ia:old-time-radio-collection", subscribed = true),
-            Show("weird-circle", "archive-radio", "Weird Circle", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "ia:Weird_Circle_otr", subscribed = true),
-            Show("librivox-misc", "archive-radio", "LibriVox Recordings", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "ia:librivox", subscribed = true),
-            Show("gutenberg-audio", "gutenberg", "Project Gutenberg Audio", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "gutenberg", subscribed = true),
+            Show("commons-otr", "commons", "Old-Time Radio", "Anthology", 45, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "commons:old time radio", subscribed = true),
+            Show("commons-speech", "commons", "Spoken Word", "Anthology", 40, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "commons:spoken word recordings", subscribed = true),
+            Show("commons-music", "commons", "Public-Domain Music", "Anthology", 30, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "commons:Audio files of music", subscribed = true),
+            Show("librivox-classics", "librivox", "LibriVox Classics", "Anthology", 60, DownloadStrategy.CATCH_UP_PREFERRED, providerProgrammeKey = "librivox:", subscribed = true),
         )
 
         /** Station/show rows from pre-public-domain builds. Purged in v3. */
@@ -121,6 +141,17 @@ abstract class RadioCacheDatabase : RoomDatabase() {
         private val RETIRED_STATION_IDS = listOf(
             "capital", "bbc-r1", "absolute", "heart", "classicfm", "smooth", "bbc-r2",
         )
+
+        /**
+         * Rows from the first public-domain build (v3), which seeded
+         * archive.org identifiers that measurement later proved unusable.
+         */
+        private val V3_SHOW_IDS = listOf(
+            "golden-age", "old-time-radio", "weird-circle",
+            "librivox-misc", "gutenberg-audio",
+        )
+
+        private val V3_STATION_IDS = listOf("archive-radio", "gutenberg")
 
 
         /**

@@ -1,0 +1,7 @@
+<resources>
+    <!-- Debug-only label: the release build is "RadioCache". This keeps the
+         throwaway public-domain test build distinguishable on the launcher,
+         and its applicationId is com.radiocache.player.debug so it cannot
+         touch the installed release app's data. -->
+    <string name="app_name">RadioLocal</string>
+</resources>

@@ -27,19 +27,38 @@ resume-from-position.
 
 This build ships **no commercial broadcaster content**.
 
-The catch-up engine is source-agnostic, but the sources bundled here are
-deliberately restricted to material that is unambiguously redistributable:
+The catch-up engine is source-agnostic, but the bundled sources are restricted
+to material that is verifiably redistributable:
 
-| Station | Source | Licence |
+| Station | Source | Licence evidence |
 |---|---|---|
-| Archive Radio | Old-time radio collections on the Internet Archive | Public Domain |
-| Archive Radio | LibriVox recordings | Public Domain |
-| Gutenberg Audio | Project Gutenberg audio books | Public Domain |
+| Commons Radio | Wikimedia Commons audio | Per-file licence metadata is **mandatory** on upload |
+| LibriVox | Librivox book feeds | Project-level public-domain dedication |
 
-The archive provider **refuses** any item whose archive.org licence is
-unknown, NonCommercial, or NoDerivs — see
-`InternetArchiveProvider` / `ArchiveMetadataParser`. Unknown provenance is
-treated as "do not ship", never as "probably fine".
+### How the licence gate works
+
+`LicencePolicy` requires **both**:
+
+1. The host is allow-listed (`TRUSTED_HOSTS`), each with a recorded rationale.
+2. No item-level licence forbids us — **NonCommercial** and **NoDerivatives**
+   are hard vetoes, checked *before* any permissive substring is considered
+   (so `CC BY-NC-SA` can never match on "cc by").
+
+| Host | Item licence | Verdict |
+|---|---|---|
+| Commons | Public domain / CC0 / CC BY | `VERIFIED_LICENCE` — ship |
+| Commons | blank | `REFUSED` — cannot prove provenance |
+| Commons | CC BY-NC-*, CC BY-ND-* | `REFUSED` — veto |
+| LibriVox | *(no field)* | `ATTESTED_HOST` — ship on the site's documented pledge |
+| anything else | anything | `REFUSED` |
+
+### Why not archive.org
+
+Measurement, not assumption. An `advancedsearch` for
+`usage:"Public Domain Mark 1.0" AND mediatype:audio` returns **0** items, and
+3 of 5 candidate OTR items had **no `usage` field at all**. A gate that depends
+on that field rejects essentially everything, so archive.org was dropped as the
+primary source in favour of Commons, where the field is mandatory.
 
 ## Architecture
 
@@ -51,7 +70,8 @@ ViewModels            one per screen, StateFlow-only
 RadioRepository       interface; Room-backed implementation
       │
       ├── SyncWorker (WorkManager) ── Catch-up engine
-      │                                   ├── InternetArchiveProvider
+      │                                   ├── CommonsProvider   (mandatory licence)
+      │                                   ├── LibrivoxProvider  (host-attested)
       │                                   └── RssCatchUpProvider
       │                              └── DownloadPlanner → AudioDownloader
       │
@@ -94,15 +114,17 @@ absent so a fresh clone still produces an installable APK.
 Unit tests run on the JVM and cover the parts that can silently rot:
 
 ```
-ArchiveMetadataParserTest   archive.org JSON → programmes, licence gating
-RssFeedParserTest           feed parsing, incl. Android-DOM pitfalls
-DownloadPlannerTest         catch-up vs capture decisions
-RetentionPolicyTest         keep-days / keep-N rules
-HlsPlaylistTest             master→variant, segment lists
-SyncTimeTest                daily sync anchor maths
-RecordingFilesTest          on-disk layout + sanitisation
-AudioDownloaderTest         Content-Range parsing
-MappersTest                 Room entity ↔ domain mapping
+CommonsMetadataParserTest  Commons JSON → programmes, NC/ND vetoing
+LicencePolicyTest          licence gating incl. NC/ND veto precedence
+LibrivoxFeedParserTest     book-feed parsing
+RssFeedParserTest          feed parsing, incl. Android-DOM pitfalls
+DownloadPlannerTest        catch-up vs capture decisions
+RetentionPolicyTest        keep-days / keep-N rules
+HlsPlaylistTest            master→variant, segment lists
+SyncTimeTest               daily sync anchor maths
+RecordingFilesTest         on-disk layout + sanitisation
+AudioDownloaderTest        Content-Range parsing
+MappersTest                Room entity ↔ domain mapping
 ```
 
 ## Permissions

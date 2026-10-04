@@ -32,8 +32,8 @@ object StationColors {
     // Public-domain build: these are OUR palette entries, not third-party
     // brand colours (the previous map used broadcasters' trademark colours).
     private val fixed = mapOf(
-        "archive-radio" to Color(0xFF00695C), // archival teal
-        "gutenberg" to Color(0xFF5D4037), // book brown
+        "commons" to Color(0xFF00695C), // commons teal
+        "librivox" to Color(0xFF5D4037), // book brown
     )
 
     fun forStation(stationId: String): Color =
