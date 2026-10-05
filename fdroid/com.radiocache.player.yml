@@ -1,0 +1,46 @@
+# F-Droid submission recipe for RadioCache.
+#
+# This file is NOT read by the app build. It is the exact content to submit
+# as `metadata/com.radiocache.player.yml` in a merge request against
+# https://gitlab.com/fdroid/fdroiddata (or via an RFP issue referencing it).
+#
+# Verified against the live build 2026-10-05:
+#   - applicationId com.radiocache.player, versionCode 33, 0.9.1-commons
+#   - Gradle 8.14, AGP 8.5.2, JDK 17, compileSdk 36
+#   - 57/57 unit tests green, release APK builds from a clean clone with no
+#     keystore present (falls back to debug key, never fails the build)
+
+Categories:
+  - Multimedia
+License: GPL-3.0-or-later
+AuthorName: RadioCache contributors
+SourceCode: https://github.com/wharton0/RadioCache
+IssueTracker: https://github.com/wharton0/RadioCache/issues
+Changelog: https://github.com/wharton0/RadioCache/releases
+AutoName: RadioCache
+Summary: Download radio audio on Wi-Fi and listen offline
+Description: |
+  RadioCache fetches audio while you are on Wi-Fi so it is ready when you are
+  not — then plays it back offline with full transport controls and
+  resume-from-position.
+
+  This app ships public-domain sources only and refuses to download
+  anything else. Two sources are bundled: Wikimedia Commons (per-file
+  licence metadata there is mandatory, so each recording is verified
+  redistributable before fetching) and LibriVox (volunteer-read
+  public-domain books). No commercial broadcaster content is bundled,
+  fetched, or redistributed.
+
+RepoType: git
+Repo: https://github.com/wharton0/RadioCache.git
+
+Builds:
+  - versionName: 0.9.1-commons
+    versionCode: 33
+    commit: 833d38c01ffd5dc9517212684cf4cd6326c4af74
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: None
+UpdateCheckMode: None
