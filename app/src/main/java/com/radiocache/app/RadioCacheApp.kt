@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
 import com.radiocache.app.di.AppContainer
+import com.radiocache.app.data.ConsistencyChecker
 import com.radiocache.app.data.local.Mappers.toEntity
 import com.radiocache.app.data.local.RadioCacheDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +62,14 @@ class RadioCacheApp : Application() {
                 container.syncScheduler.schedulePeriodic()
             } catch (t: Throwable) {
                 Log.e(TAG, "schedulePeriodic failed", t)
+            }
+            // Reconcile the index with disk BEFORE the first frame the user
+            // sees: a COMPLETED row whose audio is gone would otherwise show as
+            // playable and only fail when tapped.
+            try {
+                ConsistencyChecker.Reconciler(container.database).reconcileCompleted()
+            } catch (t: Throwable) {
+                Log.e(TAG, "consistency check failed", t)
             }
         }
         Log.i(TAG, "RadioCache initialized (stage4)")

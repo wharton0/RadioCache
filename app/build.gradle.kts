@@ -24,8 +24,8 @@ android {
         applicationId = "com.radiocache.player"
         minSdk = 26
         targetSdk = 36
-        versionCode = 31
-        versionName = "0.8.1-icon"
+        versionCode = 33
+        versionName = "0.8.3-consistency"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -113,6 +113,18 @@ class RadioPlayerManager(
             logger.w(TAG, "play() with null path: ${recording.id}")
             return
         }
+        // Self-heal: the DB can say COMPLETED while the file is gone (manual
+        // deletion, storage reclaim, an interrupted cleanup). Handing such a row
+        // to the data source throws FileNotFoundException deep in Media3 and
+        // surfaces as a player error, so verify the file before preparing.
+        if (!fileExists(path)) {
+            logger.w(TAG, "missing file for ${recording.id} at $path — marking FAILED")
+            _nowPlaying.value = _nowPlaying.value.copy(
+                error = "File missing — re-sync this show to download it again",
+            )
+            scope.launch { markMissing(recording) }
+            return
+        }
         scope.launch {
             try {
                 // Persist previous track position before switching.
@@ -150,10 +162,30 @@ class RadioPlayerManager(
         }
     }
 
+private fun fileExists(path: String): Boolean =
+        runCatching { java.io.File(path).let { it.exists() && it.length() > 0 } }.getOrDefault(false)
+
     /**
- * Media item with real metadata so the lock-screen / notification shows the
- * programme title and station instead of a raw file path.
- */
+     * Marks a row whose audio vanished as FAILED so the UI stops offering it
+     * as playable and the next sync re-downloads it. The row is kept (not
+     * deleted) because the title/metadata is still worth showing.
+     */
+    private suspend fun markMissing(recording: Recording) {
+        runCatching {
+            val db = (appContext.applicationContext as? com.radiocache.app.RadioCacheApp)
+                ?.container?.database ?: return@runCatching
+            db.recordingDao().updateStatus(
+                recording.id,
+                com.radiocache.app.data.model.DownloadStatus.FAILED.name,
+                0,
+            )
+        }.onFailure { logger.w(TAG, "could not mark ${recording.id} as failed", it) }
+    }
+
+    /**
+     * Media item with real metadata so the lock-screen / notification shows the
+     * programme title and station instead of a raw file path.
+     */
 private fun mediaItemFor(recording: com.radiocache.app.data.model.Recording): MediaItem {
     val metadata = androidx.media3.common.MediaMetadata.Builder()
         .setTitle(recording.title)
