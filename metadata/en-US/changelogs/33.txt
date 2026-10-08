@@ -1,0 +1,3 @@
+0.9.1: Commons-based public-domain sources (Wikimedia Commons + LibriVox)
+with licence enforcement in code. Added startup consistency check that
+repairs recordings whose audio file went missing.

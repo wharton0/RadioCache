@@ -17,20 +17,10 @@ AuthorName: RadioCache contributors
 SourceCode: https://github.com/wharton0/RadioCache
 IssueTracker: https://github.com/wharton0/RadioCache/issues
 Changelog: https://github.com/wharton0/RadioCache/releases
+# NOTE: Summary/Description intentionally live in the upstream repo's
+# Triple-T metadata (metadata/en-US/*), not here — per template, the
+# fdroiddata yml must not duplicate them.
 AutoName: RadioCache
-Summary: Download radio audio on Wi-Fi and listen offline
-Description: |
-  RadioCache fetches audio while you are on Wi-Fi so it is ready when you are
-  not — then plays it back offline with full transport controls and
-  resume-from-position.
-
-  This app ships public-domain sources only and refuses to download
-  anything else. Two sources are bundled: Wikimedia Commons (per-file
-  licence metadata there is mandatory, so each recording is verified
-  redistributable before fetching) and LibriVox (volunteer-read
-  public-domain books). No commercial broadcaster content is bundled,
-  fetched, or redistributed.
-
 RepoType: git
 Repo: https://github.com/wharton0/RadioCache.git
 
@@ -42,5 +32,8 @@ Builds:
     gradle:
       - yes
 
+# Manual updates for now: versionName carries a variant suffix
+# ("0.9.1-commons") so tag-based auto-update cannot map versions.
+# Next release switches to plain versions + AutoUpdateMode: Version.
 AutoUpdateMode: None
 UpdateCheckMode: None
